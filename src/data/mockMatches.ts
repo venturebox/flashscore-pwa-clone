@@ -1,163 +1,127 @@
-import type { Match } from '../types'
+import type { Match, MatchStatus } from '../types'
 
-const today = new Date()
-const fmt = (h: number, m: number) => {
-  const d = new Date(today)
-  d.setHours(h, m, 0, 0)
-  return d.toISOString()
+function dayStart(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 
-export const mockMatches: Match[] = [
-  // ── PREMIER LEAGUE ──────────────────────────────────────
-  {
-    id: 1001,
-    league: { id: 39, name: 'Premier League', country: 'England', logo: '', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-    homeTeam: { id: 40, name: 'Liverpool', shortName: 'LIV', logo: '' },
-    awayTeam: { id: 42, name: 'Arsenal', shortName: 'ARS', logo: '' },
-    status: '2H',
-    minute: 67,
-    startTime: fmt(15, 0),
-    score: { home: 2, away: 1 },
-    isLive: true,
-  },
-  {
-    id: 1002,
-    league: { id: 39, name: 'Premier League', country: 'England', logo: '', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-    homeTeam: { id: 50, name: 'Manchester City', shortName: 'MCI', logo: '' },
-    awayTeam: { id: 49, name: 'Chelsea', shortName: 'CHE', logo: '' },
-    status: 'HT',
-    minute: 45,
-    startTime: fmt(15, 0),
-    score: { home: 1, away: 1 },
-    isLive: true,
-  },
-  {
-    id: 1003,
-    league: { id: 39, name: 'Premier League', country: 'England', logo: '', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-    homeTeam: { id: 33, name: 'Manchester Utd', shortName: 'MUN', logo: '' },
-    awayTeam: { id: 47, name: 'Tottenham', shortName: 'TOT', logo: '' },
-    status: 'NS',
-    minute: null,
-    startTime: fmt(17, 30),
-    score: { home: null, away: null },
-    isLive: false,
-  },
-  {
-    id: 1004,
-    league: { id: 39, name: 'Premier League', country: 'England', logo: '', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-    homeTeam: { id: 34, name: 'Newcastle', shortName: 'NEW', logo: '' },
-    awayTeam: { id: 51, name: 'Brighton', shortName: 'BRI', logo: '' },
-    status: 'FT',
-    minute: 90,
-    startTime: fmt(13, 0),
-    score: { home: 3, away: 0 },
-    isLive: false,
-  },
+function todayStart() {
+  return dayStart(new Date())
+}
 
-  // ── LA LIGA ─────────────────────────────────────────────
-  {
-    id: 2001,
-    league: { id: 140, name: 'La Liga', country: 'Spain', logo: '', flag: '🇪🇸' },
-    homeTeam: { id: 541, name: 'Real Madrid', shortName: 'RMA', logo: '' },
-    awayTeam: { id: 529, name: 'Barcelona', shortName: 'BAR', logo: '' },
-    status: '1H',
-    minute: 23,
-    startTime: fmt(16, 0),
-    score: { home: 0, away: 0 },
-    isLive: true,
-  },
-  {
-    id: 2002,
-    league: { id: 140, name: 'La Liga', country: 'Spain', logo: '', flag: '🇪🇸' },
-    homeTeam: { id: 536, name: 'Sevilla', shortName: 'SEV', logo: '' },
-    awayTeam: { id: 530, name: 'Atletico Madrid', shortName: 'ATM', logo: '' },
-    status: 'NS',
-    minute: null,
-    startTime: fmt(20, 0),
-    score: { home: null, away: null },
-    isLive: false,
-  },
-  {
-    id: 2003,
-    league: { id: 140, name: 'La Liga', country: 'Spain', logo: '', flag: '🇪🇸' },
-    homeTeam: { id: 532, name: 'Valencia', shortName: 'VAL', logo: '' },
-    awayTeam: { id: 538, name: 'Celta Vigo', shortName: 'CEL', logo: '' },
-    status: 'FT',
-    minute: 90,
-    startTime: fmt(14, 0),
-    score: { home: 1, away: 2 },
-    isLive: false,
-  },
+type RawMatch = Omit<Match, 'status' | 'minute' | 'score' | 'isLive'>
 
-  // ── BUNDESLIGA ───────────────────────────────────────────
-  {
-    id: 3001,
-    league: { id: 78, name: 'Bundesliga', country: 'Germany', logo: '', flag: '🇩🇪' },
-    homeTeam: { id: 157, name: 'Bayern Munich', shortName: 'BAY', logo: '' },
-    awayTeam: { id: 165, name: 'Borussia Dortmund', shortName: 'BVB', logo: '' },
-    status: '2H',
-    minute: 78,
-    startTime: fmt(15, 30),
-    score: { home: 3, away: 2 },
-    isLive: true,
-  },
-  {
-    id: 3002,
-    league: { id: 78, name: 'Bundesliga', country: 'Germany', logo: '', flag: '🇩🇪' },
-    homeTeam: { id: 173, name: 'RB Leipzig', shortName: 'RBL', logo: '' },
-    awayTeam: { id: 168, name: 'Bayer Leverkusen', shortName: 'B04', logo: '' },
-    status: 'NS',
-    minute: null,
-    startTime: fmt(18, 30),
-    score: { home: null, away: null },
-    isLive: false,
-  },
+const LIVE_STATUSES: MatchStatus[] = ['1H', 'HT', '2H']
 
-  // ── SERIE A ──────────────────────────────────────────────
-  {
-    id: 4001,
-    league: { id: 135, name: 'Serie A', country: 'Italy', logo: '', flag: '🇮🇹' },
-    homeTeam: { id: 489, name: 'AC Milan', shortName: 'MIL', logo: '' },
-    awayTeam: { id: 505, name: 'Inter', shortName: 'INT', logo: '' },
-    status: '1H',
-    minute: 38,
-    startTime: fmt(18, 0),
-    score: { home: 1, away: 0 },
-    isLive: true,
-  },
-  {
-    id: 4002,
-    league: { id: 135, name: 'Serie A', country: 'Italy', logo: '', flag: '🇮🇹' },
-    homeTeam: { id: 496, name: 'Juventus', shortName: 'JUV', logo: '' },
-    awayTeam: { id: 497, name: 'AS Roma', shortName: 'ROM', logo: '' },
-    status: 'FT',
-    minute: 90,
-    startTime: fmt(12, 30),
-    score: { home: 2, away: 2 },
-    isLive: false,
-  },
+/** Adjust match status/score depending on which day is selected. */
+function adapt(
+  raw: RawMatch,
+  todayStatus: MatchStatus,
+  todayMinute: number | null,
+  todayScore: { home: number | null; away: number | null },
+  pastScore: { home: number; away: number },
+  day: Date,
+): Match {
+  const ts = dayStart(day)
+  const today = todayStart()
 
-  // ── EKSTRAKLASA ──────────────────────────────────────────
-  {
-    id: 5001,
-    league: { id: 106, name: 'Ekstraklasa', country: 'Poland', logo: '', flag: '🇵🇱' },
-    homeTeam: { id: 600, name: 'Legia Warszawa', shortName: 'LEG', logo: '' },
-    awayTeam: { id: 601, name: 'Lech Poznań', shortName: 'LEP', logo: '' },
-    status: '2H',
-    minute: 55,
-    startTime: fmt(17, 0),
-    score: { home: 1, away: 1 },
-    isLive: true,
-  },
-  {
-    id: 5002,
-    league: { id: 106, name: 'Ekstraklasa', country: 'Poland', logo: '', flag: '🇵🇱' },
-    homeTeam: { id: 602, name: 'Wisła Kraków', shortName: 'WIS', logo: '' },
-    awayTeam: { id: 603, name: 'Górnik Zabrze', shortName: 'GOR', logo: '' },
-    status: 'NS',
-    minute: null,
-    startTime: fmt(19, 30),
-    score: { home: null, away: null },
-    isLive: false,
-  },
-]
+  if (ts < today) {
+    // Past day — show finished result
+    return { ...raw, status: 'FT', minute: 90, score: pastScore, isLive: false }
+  }
+  if (ts > today) {
+    // Future day — scheduled only
+    return { ...raw, status: 'NS', minute: null, score: { home: null, away: null }, isLive: false }
+  }
+  // Today — show live/scheduled mix
+  return {
+    ...raw,
+    status: todayStatus,
+    minute: todayMinute,
+    score: todayScore,
+    isLive: LIVE_STATUSES.includes(todayStatus),
+  }
+}
+
+export function getMockMatchesForDate(day: Date): Match[] {
+  const fmt = (h: number, m: number) => {
+    return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m, 0, 0).toISOString()
+  }
+
+  const base = (
+    id: number,
+    leagueId: number, leagueName: string, country: string, flag: string,
+    homeId: number, homeName: string, homeForm: string,
+    awayId: number, awayName: string, awayForm: string,
+    hour: number, min: number,
+  ): RawMatch => ({
+    id,
+    league: { id: leagueId, name: leagueName, country, logo: '', flag },
+    homeTeam: { id: homeId, name: homeName, shortName: homeName.slice(0, 3).toUpperCase(), logo: '', form: homeForm },
+    awayTeam: { id: awayId, name: awayName, shortName: awayName.slice(0, 3).toUpperCase(), logo: '', form: awayForm },
+    startTime: fmt(hour, min),
+  })
+
+  return [
+    // ── PREMIER LEAGUE ────────────────────────────────────
+    adapt(
+      base(1001, 39, 'Premier League', 'England', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 40, 'Liverpool', 'WWWDWWWLWW', 42, 'Arsenal', 'WDWWLWWDWW', 15, 0),
+      '2H', 67, { home: 2, away: 1 }, { home: 2, away: 1 }, day,
+    ),
+    adapt(
+      base(1002, 39, 'Premier League', 'England', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 50, 'Manchester City', 'WLWWDWWWLW', 49, 'Chelsea', 'DWLDWWDLWW', 15, 0),
+      'HT', 45, { home: 1, away: 1 }, { home: 1, away: 1 }, day,
+    ),
+    adapt(
+      base(1003, 39, 'Premier League', 'England', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 33, 'Manchester Utd', 'LLDWLLWLLD', 47, 'Tottenham', 'WDLLWWDLWL', 17, 30),
+      'NS', null, { home: null, away: null }, { home: 0, away: 2 }, day,
+    ),
+    adapt(
+      base(1004, 39, 'Premier League', 'England', '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 34, 'Newcastle', 'WWDWWLWWDW', 51, 'Brighton', 'DWWLDWDWWL', 13, 0),
+      'FT', 90, { home: 3, away: 0 }, { home: 3, away: 0 }, day,
+    ),
+
+    // ── LA LIGA ───────────────────────────────────────────
+    adapt(
+      base(2001, 140, 'La Liga', 'Spain', '🇪🇸', 541, 'Real Madrid', 'WWWLWWWDWW', 529, 'Barcelona', 'WWDWWWLWWW', 16, 0),
+      '1H', 23, { home: 0, away: 0 }, { home: 1, away: 3 }, day,
+    ),
+    adapt(
+      base(2002, 140, 'La Liga', 'Spain', '🇪🇸', 536, 'Sevilla', 'LDWLLWDLWL', 530, 'Atletico Madrid', 'WDWWLWWDDW', 20, 0),
+      'NS', null, { home: null, away: null }, { home: 0, away: 1 }, day,
+    ),
+    adapt(
+      base(2003, 140, 'La Liga', 'Spain', '🇪🇸', 532, 'Valencia', 'LLDWLLDWLL', 538, 'Celta Vigo', 'WLWDWLWWDL', 14, 0),
+      'FT', 90, { home: 1, away: 2 }, { home: 1, away: 2 }, day,
+    ),
+
+    // ── BUNDESLIGA ────────────────────────────────────────
+    adapt(
+      base(3001, 78, 'Bundesliga', 'Germany', '🇩🇪', 157, 'Bayern Munich', 'WWWWLWWWWW', 165, 'Borussia Dortmund', 'WDWLWWDWLW', 15, 30),
+      '2H', 78, { home: 3, away: 2 }, { home: 3, away: 2 }, day,
+    ),
+    adapt(
+      base(3002, 78, 'Bundesliga', 'Germany', '🇩🇪', 173, 'RB Leipzig', 'WWLDWWWLDW', 168, 'Bayer Leverkusen', 'WWWDWWWWDW', 18, 30),
+      'NS', null, { home: null, away: null }, { home: 2, away: 0 }, day,
+    ),
+
+    // ── SERIE A ───────────────────────────────────────────
+    adapt(
+      base(4001, 135, 'Serie A', 'Italy', '🇮🇹', 489, 'AC Milan', 'WDWWLWDWWL', 505, 'Inter', 'WWWDWWWLWW', 18, 0),
+      '1H', 38, { home: 1, away: 0 }, { home: 1, away: 2 }, day,
+    ),
+    adapt(
+      base(4002, 135, 'Serie A', 'Italy', '🇮🇹', 496, 'Juventus', 'DWWLDWWLDD', 497, 'AS Roma', 'WLDWWLWDLW', 12, 30),
+      'FT', 90, { home: 2, away: 2 }, { home: 2, away: 2 }, day,
+    ),
+
+    // ── EKSTRAKLASA ───────────────────────────────────────
+    adapt(
+      base(5001, 106, 'Ekstraklasa', 'Poland', '🇵🇱', 600, 'Legia Warszawa', 'WWDWWLWWDW', 601, 'Lech Poznań', 'WDLWWWDWLW', 17, 0),
+      '2H', 55, { home: 1, away: 1 }, { home: 2, away: 0 }, day,
+    ),
+    adapt(
+      base(5002, 106, 'Ekstraklasa', 'Poland', '🇵🇱', 602, 'Wisła Kraków', 'LLDWLWLLDW', 603, 'Górnik Zabrze', 'DWLWDLWWLD', 19, 30),
+      'NS', null, { home: null, away: null }, { home: 1, away: 1 }, day,
+    ),
+  ]
+}

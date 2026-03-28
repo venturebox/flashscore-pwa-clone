@@ -1,6 +1,26 @@
+import { useState, useMemo } from 'react'
 import { useMatches } from './hooks/useMatches'
 import { Header } from './components/Header'
 import { LeagueSection } from './components/LeagueSection'
+import { LeagueFilter } from './components/LeagueFilter'
+import type { MatchStatus } from './types'
+
+const FINISHED: MatchStatus[] = ['FT', 'AET', 'PEN']
+
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function isToday(d: Date) {
+  const t = new Date()
+  return d.getFullYear() === t.getFullYear() &&
+    d.getMonth() === t.getMonth() &&
+    d.getDate() === t.getDate()
+}
+
+function isPast(d: Date) {
+  return startOfDay(d).getTime() < startOfDay(new Date()).getTime()
+}
 
 function Spinner() {
   return (
@@ -11,22 +31,50 @@ function Spinner() {
   )
 }
 
-function EmptyState() {
+function EmptyState({ date }: { date: Date }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20 px-8 text-center">
       <span className="text-5xl">⚽</span>
-      <p className="text-gray-700 font-semibold">Brak meczów na dziś</p>
-      <p className="text-gray-400 text-sm">Zajrzyj jutro lub sprawdź inne daty.</p>
+      <p className="text-gray-700 font-semibold">Brak meczów</p>
+      <p className="text-gray-400 text-sm">
+        {isToday(date)
+          ? 'Brak trwających i nadchodzących meczów.'
+          : 'Brak meczów w wybranym dniu.'}
+      </p>
     </div>
   )
 }
 
 export default function App() {
-  const { groups, loading, error, lastUpdated, totalLive, refresh } = useMatches()
+  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()))
+  const [selectedLeague, setSelectedLeague] = useState<number | null>(null)
+
+  const { groups, loading, error, lastUpdated, totalLive, refresh } = useMatches(selectedDate)
+
+  function handleDateChange(d: Date) {
+    setSelectedDate(d)
+    setSelectedLeague(null)
+  }
+
+  // For today: hide finished matches (show only LIVE + upcoming).
+  // For past days: show all matches (FT results).
+  // For future days: show all matches (NS scheduled).
+  const activeGroups = useMemo(() => {
+    if (!isToday(selectedDate)) return groups
+    return groups
+      .map((g) => ({ ...g, matches: g.matches.filter((m) => !FINISHED.includes(m.status)) }))
+      .filter((g) => g.matches.length > 0)
+  }, [groups, selectedDate])
+
+  const visibleGroups = useMemo(() => {
+    if (selectedLeague === null) return activeGroups
+    return activeGroups.filter((g) => g.leagueId === selectedLeague)
+  }, [activeGroups, selectedLeague])
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 max-w-lg mx-auto">
-      <Header liveCount={totalLive} />
+      <Header liveCount={totalLive} date={selectedDate} onDateChange={handleDateChange} />
+      <LeagueFilter groups={activeGroups} selectedId={selectedLeague} onChange={setSelectedLeague} />
 
       <main>
         {loading && <Spinner />}
@@ -37,9 +85,9 @@ export default function App() {
           </div>
         )}
 
-        {!loading && !error && groups.length === 0 && <EmptyState />}
+        {!loading && !error && visibleGroups.length === 0 && <EmptyState date={selectedDate} />}
 
-        {!loading && groups.map((group) => (
+        {!loading && visibleGroups.map((group) => (
           <LeagueSection key={group.leagueId} group={group} />
         ))}
       </main>
@@ -50,7 +98,8 @@ export default function App() {
             onClick={refresh}
             className="text-gray-400 text-xs hover:text-gray-600 transition-colors active:scale-95"
           >
-            Odświeżono {lastUpdated.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · dotknij aby odświeżyć
+            Odświeżono {lastUpdated.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            {isPast(selectedDate) ? '' : ' · dotknij aby odświeżyć'}
           </button>
         </footer>
       )}

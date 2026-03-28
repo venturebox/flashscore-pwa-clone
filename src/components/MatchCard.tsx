@@ -1,4 +1,5 @@
-import type { Match } from '../types'
+import type { Match, Team } from '../types'
+import { FormGuide } from './FormGuide'
 
 interface Props {
   match: Match
@@ -36,11 +37,7 @@ function ScoreDisplay({ match }: { match: Match }) {
   const hasScore = score.home !== null && score.away !== null
 
   if (!hasScore) {
-    return (
-      <div className="flex items-center gap-1">
-        <span className="text-gray-300 text-lg">-:-</span>
-      </div>
-    )
+    return <span className="text-gray-300 text-lg">-:-</span>
   }
 
   const scoreClass =
@@ -62,7 +59,37 @@ function ScoreDisplay({ match }: { match: Match }) {
   )
 }
 
+function TeamRow({ team, isWinner }: { team: Team; isWinner: boolean }) {
+  return (
+    <div className="flex items-start gap-2 py-0.5">
+      {team.logo ? (
+        <img src={team.logo} alt={team.name} className="w-4 h-4 object-contain flex-shrink-0 mt-0.5" />
+      ) : (
+        <div className="w-4 h-4 rounded-full bg-gray-300 flex-shrink-0 mt-0.5" />
+      )}
+      <div className="min-w-0">
+        <span className={`text-sm truncate block ${isWinner ? 'text-gray-900 font-semibold' : 'text-gray-600'}`}>
+          {team.name}
+        </span>
+        {team.form && <FormGuide form={team.form} />}
+      </div>
+    </div>
+  )
+}
+
 export function MatchCard({ match }: Props) {
+  const ftHome =
+    match.status === 'FT' &&
+    match.score.home !== null &&
+    match.score.away !== null &&
+    match.score.home > match.score.away
+
+  const ftAway =
+    match.status === 'FT' &&
+    match.score.home !== null &&
+    match.score.away !== null &&
+    match.score.away > match.score.home
+
   return (
     <div
       className={`flex items-center px-4 py-3 border-b border-gray-100 transition-colors active:bg-gray-50 ${
@@ -76,37 +103,14 @@ export function MatchCard({ match }: Props) {
 
       {/* Teams column */}
       <div className="flex-1 min-w-0 px-3">
-        <TeamRow name={match.homeTeam.name} logo={match.homeTeam.logo} isWinner={
-          match.status === 'FT' && match.score.home !== null && match.score.away !== null
-            ? match.score.home > match.score.away
-            : false
-        } />
-        <TeamRow name={match.awayTeam.name} logo={match.awayTeam.logo} isWinner={
-          match.status === 'FT' && match.score.home !== null && match.score.away !== null
-            ? match.score.away > match.score.home
-            : false
-        } />
+        <TeamRow team={match.homeTeam} isWinner={ftHome} />
+        <TeamRow team={match.awayTeam} isWinner={ftAway} />
       </div>
 
       {/* Score column */}
       <div className="w-20 flex-shrink-0 flex justify-end">
         <ScoreDisplay match={match} />
       </div>
-    </div>
-  )
-}
-
-function TeamRow({ name, logo, isWinner }: { name: string; logo: string; isWinner: boolean }) {
-  return (
-    <div className="flex items-center gap-2 py-0.5">
-      {logo ? (
-        <img src={logo} alt={name} className="w-4 h-4 object-contain flex-shrink-0" />
-      ) : (
-        <div className="w-4 h-4 rounded-full bg-gray-300 flex-shrink-0" />
-      )}
-      <span className={`text-sm truncate ${isWinner ? 'text-gray-900 font-semibold' : 'text-gray-600'}`}>
-        {name}
-      </span>
     </div>
   )
 }

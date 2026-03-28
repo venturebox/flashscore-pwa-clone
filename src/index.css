@@ -26,3 +26,6 @@ body {
   background: #d1d5db;
   border-radius: 2px;
 }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
