@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/flashscore-pwa-clone/sw.js', { scope: '/flashscore-pwa-clone/' })})}
