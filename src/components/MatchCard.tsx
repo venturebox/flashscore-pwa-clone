@@ -6,16 +6,16 @@ interface Props {
 
 function StatusBadge({ match }: { match: Match }) {
   if (match.status === 'FT') {
-    return <span className="text-gray-500 text-xs font-medium">Koniec</span>
+    return <span className="text-gray-400 text-xs font-medium">Koniec</span>
   }
   if (match.status === 'HT') {
-    return <span className="text-yellow-400 text-xs font-bold">Przerwa</span>
+    return <span className="text-yellow-600 text-xs font-bold">Przerwa</span>
   }
   if (match.status === 'CANC') {
-    return <span className="text-gray-500 text-xs">Odwołany</span>
+    return <span className="text-gray-400 text-xs">Odwołany</span>
   }
   if (match.status === 'PST') {
-    return <span className="text-gray-500 text-xs">Przełożony</span>
+    return <span className="text-gray-400 text-xs">Przełożony</span>
   }
   if (match.isLive && match.minute !== null) {
     return (
@@ -24,7 +24,6 @@ function StatusBadge({ match }: { match: Match }) {
       </span>
     )
   }
-  // Not started
   const time = new Date(match.startTime).toLocaleTimeString('pl-PL', {
     hour: '2-digit',
     minute: '2-digit',
@@ -39,9 +38,7 @@ function ScoreDisplay({ match }: { match: Match }) {
   if (!hasScore) {
     return (
       <div className="flex items-center gap-1">
-        <span className="text-gray-600 text-lg">-</span>
-        <span className="text-gray-600 text-lg">:</span>
-        <span className="text-gray-600 text-lg">-</span>
+        <span className="text-gray-300 text-lg">-:-</span>
       </div>
     )
   }
@@ -50,8 +47,8 @@ function ScoreDisplay({ match }: { match: Match }) {
     status === 'FT'
       ? 'text-gray-400'
       : isLive
-        ? 'text-white font-bold'
-        : 'text-gray-300'
+        ? 'text-gray-900 font-bold'
+        : 'text-gray-700'
 
   return (
     <div className="flex items-center gap-1.5">
@@ -68,8 +65,8 @@ function ScoreDisplay({ match }: { match: Match }) {
 export function MatchCard({ match }: Props) {
   return (
     <div
-      className={`flex items-center px-4 py-3 border-b border-gray-800/60 transition-colors active:bg-gray-800/40 ${
-        match.isLive ? 'bg-gray-800/20' : ''
+      className={`flex items-center px-4 py-3 border-b border-gray-100 transition-colors active:bg-gray-50 ${
+        match.isLive ? 'bg-red-50/40' : 'bg-white'
       }`}
     >
       {/* Status column */}
@@ -105,9 +102,9 @@ function TeamRow({ name, logo, isWinner }: { name: string; logo: string; isWinne
       {logo ? (
         <img src={logo} alt={name} className="w-4 h-4 object-contain flex-shrink-0" />
       ) : (
-        <div className="w-4 h-4 rounded-full bg-gray-600 flex-shrink-0" />
+        <div className="w-4 h-4 rounded-full bg-gray-300 flex-shrink-0" />
       )}
-      <span className={`text-sm truncate ${isWinner ? 'text-white font-semibold' : 'text-gray-300'}`}>
+      <span className={`text-sm truncate ${isWinner ? 'text-gray-900 font-semibold' : 'text-gray-600'}`}>
         {name}
       </span>
     </div>

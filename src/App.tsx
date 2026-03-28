@@ -15,8 +15,8 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20 px-8 text-center">
       <span className="text-5xl">⚽</span>
-      <p className="text-gray-300 font-semibold">Brak meczów na dziś</p>
-      <p className="text-gray-500 text-sm">Zajrzyj jutro lub sprawdź inne daty.</p>
+      <p className="text-gray-700 font-semibold">Brak meczów na dziś</p>
+      <p className="text-gray-400 text-sm">Zajrzyj jutro lub sprawdź inne daty.</p>
     </div>
   )
 }
@@ -25,14 +25,14 @@ export default function App() {
   const { groups, loading, error, lastUpdated, totalLive, refresh } = useMatches()
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white max-w-lg mx-auto">
+    <div className="min-h-screen bg-gray-100 text-gray-900 max-w-lg mx-auto">
       <Header liveCount={totalLive} />
 
       <main>
         {loading && <Spinner />}
 
         {!loading && error && (
-          <div className="mx-4 mt-4 p-3 bg-red-900/30 border border-red-700/50 rounded-lg text-red-400 text-sm text-center">
+          <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm text-center">
             {error}
           </div>
         )}
@@ -44,12 +44,11 @@ export default function App() {
         ))}
       </main>
 
-      {/* Footer / last update */}
       {lastUpdated && (
         <footer className="py-6 px-4 text-center">
           <button
             onClick={refresh}
-            className="text-gray-600 text-xs hover:text-gray-400 transition-colors active:scale-95"
+            className="text-gray-400 text-xs hover:text-gray-600 transition-colors active:scale-95"
           >
             Odświeżono {lastUpdated.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · dotknij aby odświeżyć
           </button>
