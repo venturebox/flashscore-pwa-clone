@@ -1,9 +1,26 @@
 import axios from 'axios'
 import type { Match, LeagueGroup } from '../types'
-import { mockMatches } from '../data/mockMatches'
+import { getMockMatchesForDate } from '../data/mockMatches'
 
 const API_KEY = import.meta.env.VITE_API_FOOTBALL_KEY as string | undefined
 const BASE_URL = 'https://v3.football.api-sports.io'
+
+// Form cache: teamId → form string (e.g. "WWDLW") — fetched once per session
+const formCache = new Map<number, string>()
+
+function calendarDayKey(d: Date): string {
+  return d.toLocaleDateString('sv-SE')
+}
+
+function matchCalendarDayKey(match: Match): string {
+  return new Date(match.startTime).toLocaleDateString('sv-SE')
+}
+
+/** Keep fixtures that fall on the same local calendar day as `day`. */
+function filterMatchesForCalendarDay(matches: Match[], day: Date): Match[] {
+  const key = calendarDayKey(day)
+  return matches.filter((m) => matchCalendarDayKey(m) === key)
+}
 
 function groupByLeague(matches: Match[]): LeagueGroup[] {
   const map = new Map<number, LeagueGroup>()
@@ -21,12 +38,62 @@ function groupByLeague(matches: Match[]): LeagueGroup[] {
     }
     map.get(lg.id)!.matches.push(match)
   }
-  // Sort: live first, then by league name
   return Array.from(map.values()).sort((a, b) => {
     const aLive = a.matches.some((m) => m.isLive) ? 0 : 1
     const bLive = b.matches.some((m) => m.isLive) ? 0 : 1
     return aLive - bLive || a.leagueName.localeCompare(b.leagueName)
   })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function calcFormFromFixtures(fixtures: any[], teamId: number): string {
+  return fixtures
+    .slice(-10)
+    .map((f: any) => {
+      const isHome = f.teams.home.id === teamId
+      const homeGoals: number = f.goals.home ?? 0
+      const awayGoals: number = f.goals.away ?? 0
+      const scored = isHome ? homeGoals : awayGoals
+      const conceded = isHome ? awayGoals : homeGoals
+      if (scored > conceded) return 'W'
+      if (scored === conceded) return 'D'
+      return 'L'
+    })
+    .join('')
+}
+
+async function fetchFormForTeam(teamId: number): Promise<string> {
+  if (formCache.has(teamId)) return formCache.get(teamId)!
+  try {
+    const { data } = await axios.get(`${BASE_URL}/fixtures`, {
+      headers: { 'x-apisports-key': API_KEY! },
+      params: { team: teamId, last: 10, status: 'FT' },
+      timeout: 8000,
+    })
+    const form = calcFormFromFixtures(data.response ?? [], teamId)
+    formCache.set(teamId, form)
+    return form
+  } catch {
+    return ''
+  }
+}
+
+async function enrichMatchesWithForm(matches: Match[]): Promise<Match[]> {
+  // Collect unique team IDs not yet cached
+  const uncached = new Set<number>()
+  for (const m of matches) {
+    if (!formCache.has(m.homeTeam.id)) uncached.add(m.homeTeam.id)
+    if (!formCache.has(m.awayTeam.id)) uncached.add(m.awayTeam.id)
+  }
+
+  // Fetch all in parallel (API-Football allows concurrent requests)
+  await Promise.all([...uncached].map(fetchFormForTeam))
+
+  return matches.map((m) => ({
+    ...m,
+    homeTeam: { ...m.homeTeam, form: formCache.get(m.homeTeam.id) ?? '' },
+    awayTeam: { ...m.awayTeam, form: formCache.get(m.awayTeam.id) ?? '' },
+  }))
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,31 +124,31 @@ function mapApiMatch(f: any): Match {
     status,
     minute: f.fixture.status.elapsed ?? null,
     startTime: f.fixture.date,
-    score: {
-      home: f.goals.home,
-      away: f.goals.away,
-    },
+    score: { home: f.goals.home, away: f.goals.away },
     isLive: liveStatuses.includes(status),
   }
 }
 
-export async function fetchTodayMatches(): Promise<LeagueGroup[]> {
+export async function fetchTodayMatches(date: Date = new Date()): Promise<LeagueGroup[]> {
+  const dateStr = calendarDayKey(date)
+
   if (!API_KEY) {
-    return groupByLeague(mockMatches)
+    return groupByLeague(getMockMatchesForDate(date))
   }
 
-  const dateStr = new Date().toISOString().split('T')[0]
   try {
     const { data } = await axios.get(`${BASE_URL}/fixtures`, {
-      headers: {
-        'x-apisports-key': API_KEY,
-      },
+      headers: { 'x-apisports-key': API_KEY },
       params: { date: dateStr },
       timeout: 8000,
     })
-    const matches: Match[] = (data.response ?? []).map(mapApiMatch)
-    return groupByLeague(matches.length ? matches : mockMatches)
+    const raw: Match[] = (data.response ?? []).map(mapApiMatch)
+    const base = raw.length
+      ? filterMatchesForCalendarDay(raw, date)
+      : getMockMatchesForDate(date)
+    const matches = await enrichMatchesWithForm(base)
+    return groupByLeague(matches)
   } catch {
-    return groupByLeague(mockMatches)
+    return groupByLeague(getMockMatchesForDate(date))
   }
 }

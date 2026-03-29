@@ -5,6 +5,7 @@ export interface Team {
   name: string
   shortName: string
   logo: string
+  form?: string  // e.g. "WWDLW" — last matches, newest last
 }
 
 export interface Score {

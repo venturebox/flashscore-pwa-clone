@@ -9,7 +9,12 @@
       "Bash(npm run:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"feat: initial ScoreLive PWA — Flashscore clone:*)"
+      "Bash(git commit -m \"feat: initial ScoreLive PWA — Flashscore clone:*)",
+      "Bash(git branch:*)",
+      "Bash(gh repo:*)",
+      "Bash(git commit -m \"chore: add netlify.toml with SPA redirect rule:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
