@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { useMatches } from './hooks/useMatches'
 import { Header } from './components/Header'
 import { LeagueSection } from './components/LeagueSection'
-import { LeagueFilter } from './components/LeagueFilter'
 import type { MatchStatus } from './types'
 
 const FINISHED: MatchStatus[] = ['FT', 'AET', 'PEN']
@@ -47,13 +46,11 @@ function EmptyState({ date }: { date: Date }) {
 
 export default function App() {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()))
-  const [selectedLeague, setSelectedLeague] = useState<number | null>(null)
 
   const { groups, loading, error, lastUpdated, totalLive, refresh } = useMatches(selectedDate)
 
   function handleDateChange(d: Date) {
     setSelectedDate(d)
-    setSelectedLeague(null)
   }
 
   // For today: hide finished matches (show only LIVE + upcoming).
@@ -66,15 +63,10 @@ export default function App() {
       .filter((g) => g.matches.length > 0)
   }, [groups, selectedDate])
 
-  const visibleGroups = useMemo(() => {
-    if (selectedLeague === null) return activeGroups
-    return activeGroups.filter((g) => g.leagueId === selectedLeague)
-  }, [activeGroups, selectedLeague])
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 max-w-lg mx-auto">
       <Header liveCount={totalLive} date={selectedDate} onDateChange={handleDateChange} />
-      <LeagueFilter groups={activeGroups} selectedId={selectedLeague} onChange={setSelectedLeague} />
 
       <main>
         {loading && <Spinner />}
@@ -85,9 +77,9 @@ export default function App() {
           </div>
         )}
 
-        {!loading && !error && visibleGroups.length === 0 && <EmptyState date={selectedDate} />}
+        {!loading && !error && activeGroups.length === 0 && <EmptyState date={selectedDate} />}
 
-        {!loading && visibleGroups.map((group) => (
+        {!loading && activeGroups.map((group) => (
           <LeagueSection key={group.leagueId} group={group} />
         ))}
       </main>
